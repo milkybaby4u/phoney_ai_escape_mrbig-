@@ -39,12 +39,14 @@
     /* STORY SLIDE */
     .story { justify-content:center; cursor:pointer; user-select:none; overflow:hidden; }
     .story > img {
+      z-index: 1;
       position:absolute; inset:0; width:100%; height:100%;
       object-fit:contain; pointer-events:none;
     }
 
     /* TYPEWRITER OVERLAY */
     .type-overlay {
+      z-index: 2;
       position: absolute;
       bottom: 0; left: 0; right: 0;
       background: linear-gradient(transparent, rgba(10,15,25,0.9) 28%);
@@ -78,6 +80,7 @@
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
     .tap-hint {
+      z-index: 3;
       position: absolute; bottom: 22px; left: 0; right: 0;
       text-align: center; font-size: 12px;
       color: rgba(255,255,255,0.38); letter-spacing: 1px;
@@ -139,9 +142,25 @@
     .modal.open { display:flex; }
     .modal img { width:100%; max-height:80vh; object-fit:contain; border-radius:6px; }
     .modal-close { margin-top:18px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.25); color:white; padding:12px 36px; border-radius:10px; font-size:14px; font-family:'Noto Sans KR',sans-serif; cursor:pointer; }
+
+    /* 음악 버튼 */
+    #music-btn {
+      position: fixed; top: 14px; right: 14px; z-index: 500;
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: white; font-size: 17px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(6px); transition: background 0.2s;
+    }
+    #music-btn:active { background: rgba(255,255,255,0.2); }
   </style>
 </head>
 <body>
+
+<!-- 배경음악 -->
+<audio id="bgm" src="audio/bgm.mp3" loop preload="auto"></audio>
+<button id="music-btn" onclick="toggleMusic()" title="음악 켜기/끄기">🔇</button>
 
 <!-- STORY SLIDES -->
 <div class="screen story active" id="sc-1-1">
@@ -338,7 +357,7 @@ document.querySelectorAll('.story').forEach(el => {
 });
 
 /* 첫 슬라이드 자동 시작 */
-startTyping('sc-1-1');
+window.addEventListener('load', function(){ setTimeout(function(){ startTyping('sc-1-1'); }, 100); });
 
 /* ═══ 타이핑 엔진 ═══ */
 const timers = {};
@@ -443,6 +462,41 @@ document.addEventListener('keydown',e=>{
   if(a.id==='pz-2') check2();
   if(a.id==='pz-3') check3();
 });
+
+/* ═══ 배경음악 ═══ */
+const bgm = document.getElementById('bgm');
+let musicOn = false;
+let musicStarted = false;
+
+function startMusicOnce() {
+  if (musicStarted) return;
+  musicStarted = true;
+  bgm.volume = 0.45;
+  bgm.play().then(() => {
+    musicOn = true;
+    document.getElementById('music-btn').textContent = '🔊';
+  }).catch(() => {});
+}
+
+function toggleMusic() {
+  if (!musicStarted) {
+    startMusicOnce();
+    return;
+  }
+  if (musicOn) {
+    bgm.pause();
+    musicOn = false;
+    document.getElementById('music-btn').textContent = '🔇';
+  } else {
+    bgm.play();
+    musicOn = true;
+    document.getElementById('music-btn').textContent = '🔊';
+  }
+}
+
+// 첫 터치/클릭 시 자동 재생 (모바일 정책 대응)
+document.addEventListener('click', startMusicOnce, { once: true });
+document.addEventListener('touchstart', startMusicOnce, { once: true });
 </script>
 </body>
 </html>
