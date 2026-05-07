@@ -6,22 +6,16 @@
   <title>🔐 포니 방탈출</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
-    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-       BASE
-    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     :root {
       --bg:      #212a3a;
       --surface: rgba(255,255,255,0.06);
       --border:  rgba(255,255,255,0.14);
       --accent:  #4ecdc4;
-      --danger:  #ff3131;
-      --gold:    #ffd700;
       --text:    #ffffff;
       --dim:     rgba(255,255,255,0.55);
+      --gold:    #ffd700;
     }
-
     html, body {
       height: 100%;
       background: var(--bg);
@@ -32,329 +26,151 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-       SCREEN SYSTEM
-    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    /* SCREEN */
     .screen {
-      position: fixed;
-      inset: 0;
-      background: var(--bg);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      opacity: 0;
-      pointer-events: none;
+      position: fixed; inset: 0; background: var(--bg);
+      display: flex; flex-direction: column; align-items: center;
+      opacity: 0; pointer-events: none;
       transition: opacity 0.35s ease;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
     }
-    .screen.active {
-      opacity: 1;
-      pointer-events: all;
+    .screen.active { opacity:1; pointer-events:all; }
+
+    /* STORY SLIDE */
+    .story { justify-content:center; cursor:pointer; user-select:none; overflow:hidden; }
+    .story > img {
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:contain; pointer-events:none;
     }
 
-    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-       STORY SLIDES  (tap to advance)
-    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-    .story {
-      justify-content: center;
-      cursor: pointer;
-      user-select: none;
-    }
-    .story img {
+    /* TYPEWRITER OVERLAY */
+    .type-overlay {
       position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(10,15,25,0.9) 28%);
+      padding: 50px 22px 64px;
+      pointer-events: none;
     }
+    .type-text {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.9;
+      color: #ffffff;
+      white-space: pre-wrap;
+      text-shadow: 0 1px 8px rgba(0,0,0,1);
+      max-width: 560px;
+      margin: 0 auto;
+      min-height: 2em;
+    }
+    .red-chip {
+      background: #ff3131;
+      color: #fff;
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-weight: 900;
+    }
+    .type-cursor {
+      display: inline-block; width: 2px; height: 1em;
+      background: var(--accent); margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 0.7s step-end infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
     .tap-hint {
-      position: absolute;
-      bottom: 22px;
-      left: 0; right: 0;
-      text-align: center;
-      font-size: 12px;
-      color: rgba(255,255,255,0.38);
-      letter-spacing: 1px;
-      animation: pulse 2s ease infinite;
+      position: absolute; bottom: 22px; left: 0; right: 0;
+      text-align: center; font-size: 12px;
+      color: rgba(255,255,255,0.38); letter-spacing: 1px;
+      opacity: 0; transition: opacity 0.6s ease; pointer-events: none;
     }
-    @keyframes pulse { 0%,100%{opacity:.25} 50%{opacity:.85} }
+    .tap-hint.show { opacity: 1; }
 
-    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-       PUZZLE SCREENS
-    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-    .puzzle { justify-content: flex-start; }
-
-    .pz-img {
-      width: 100%;
-      max-height: 44vh;
-      object-fit: contain;
-      background: var(--bg);
-      flex-shrink: 0;
-    }
-
-    .card {
-      width: 100%;
-      max-width: 440px;
-      padding: 18px 20px 48px;
-      display: flex;
-      flex-direction: column;
-      gap: 13px;
-    }
-
-    /* stage badge */
+    /* PUZZLE */
+    .puzzle { justify-content:flex-start; }
+    .pz-img { width:100%; max-height:44vh; object-fit:contain; background:var(--bg); flex-shrink:0; }
+    .card { width:100%; max-width:440px; padding:18px 20px 48px; display:flex; flex-direction:column; gap:13px; }
     .badge {
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: 2.5px;
-      text-transform: uppercase;
-      color: var(--accent);
-      border: 1px solid var(--accent);
-      border-radius: 20px;
-      padding: 5px 13px;
-      display: inline-block;
-      width: fit-content;
+      font-size:10px; font-weight:900; letter-spacing:2.5px; text-transform:uppercase;
+      color:var(--accent); border:1px solid var(--accent); border-radius:20px;
+      padding:5px 13px; display:inline-block; width:fit-content;
     }
-
-    .card-title {
-      font-size: 16px;
-      font-weight: 700;
-      line-height: 1.55;
-    }
-
-    /* label */
-    .lbl {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--dim);
-      margin-bottom: 5px;
-    }
-
-    /* inputs */
+    .card-title { font-size:16px; font-weight:700; line-height:1.55; }
+    .lbl { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--dim); margin-bottom:5px; }
     .gi {
-      width: 100%;
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      font-size: 22px;
-      font-weight: 700;
-      font-family: 'Noto Sans KR', sans-serif;
-      padding: 13px 16px;
-      text-align: center;
-      outline: none;
-      letter-spacing: 5px;
-      transition: border-color .2s, background .2s;
-      -webkit-appearance: none;
+      width:100%; background:var(--surface); border:1.5px solid var(--border); border-radius:10px;
+      color:var(--text); font-size:22px; font-weight:700; font-family:'Noto Sans KR',sans-serif;
+      padding:13px 16px; text-align:center; outline:none; letter-spacing:5px;
+      transition:border-color .2s,background .2s; -webkit-appearance:none;
     }
-    .gi:focus {
-      border-color: var(--accent);
-      background: rgba(78,205,196,.07);
-    }
-    .gi::placeholder { color: rgba(255,255,255,.18); letter-spacing: 3px; font-size: 18px; }
-    .gi.shake { animation: shake .4s ease; }
+    .gi:focus { border-color:var(--accent); background:rgba(78,205,196,.07); }
+    .gi::placeholder { color:rgba(255,255,255,.18); letter-spacing:3px; font-size:18px; }
+    .gi.shake { animation:shake .4s ease; }
     @keyframes shake {
-      0%,100%{transform:translateX(0)}
-      20%{transform:translateX(-7px)}
-      40%{transform:translateX(7px)}
-      60%{transform:translateX(-4px)}
-      80%{transform:translateX(4px)}
+      0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)}
+      40%{transform:translateX(7px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)}
     }
-
-    /* 3-icon row */
-    .icon-row {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-    .icon-col {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-    .icon-col span { font-size: 30px; line-height: 1; }
-    .icon-col .gi { font-size: 16px; letter-spacing: 2px; padding: 11px 6px; }
-
-    /* buttons */
     .btn {
-      display: block;
-      width: 100%;
-      padding: 14px 20px;
-      border: none;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 700;
-      font-family: 'Noto Sans KR', sans-serif;
-      cursor: pointer;
-      text-align: center;
-      transition: transform .1s ease, opacity .15s;
+      display:block; width:100%; padding:14px 20px; border:none; border-radius:12px;
+      font-size:15px; font-weight:700; font-family:'Noto Sans KR',sans-serif;
+      cursor:pointer; text-align:center; transition:transform .1s ease,opacity .15s;
     }
-    .btn:active { transform: scale(.97); opacity: .85; }
-    .btn-p  { background: var(--accent); color: var(--bg); }
-    .btn-g  { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
-    .btn-h  {
-      background: transparent;
-      border: 1px dashed rgba(255,215,0,.4);
-      color: var(--gold);
-      font-size: 13px;
-      padding: 11px 16px;
-      text-align: left;
-    }
-    .btn-np {
-      background: transparent;
-      border: 1px dashed rgba(255,215,0,.55);
-      color: var(--gold);
-      font-size: 13px;
-      padding: 11px 16px;
-      text-align: left;
-    }
+    .btn:active { transform:scale(.97); opacity:.85; }
+    .btn-p  { background:var(--accent); color:var(--bg); }
+    .btn-h  { background:transparent; border:1px dashed rgba(255,215,0,.4); color:var(--gold); font-size:13px; padding:11px 16px; text-align:left; }
+    .btn-np { background:transparent; border:1px dashed rgba(255,215,0,.55); color:var(--gold); font-size:13px; padding:11px 16px; text-align:left; }
+    .div { height:1px; background:var(--border); }
+    .fb { padding:12px 16px; border-radius:10px; font-size:13px; font-weight:700; text-align:center; display:none; }
+    .fb.err { display:block; background:rgba(255,49,49,.12); border:1px solid rgba(255,49,49,.3); color:#ff8080; }
+    .fb.ok  { display:block; background:rgba(78,205,196,.12); border:1px solid rgba(78,205,196,.3); color:var(--accent); }
+    .hint-box { background:rgba(255,215,0,.07); border:1px solid rgba(255,215,0,.2); border-radius:10px; padding:14px 16px; font-size:13px; line-height:1.65; color:var(--gold); display:none; }
+    .hint-box.open { display:block; }
 
-    /* divider */
-    .div { height: 1px; background: var(--border); }
+    /* RESULT */
+    .result { justify-content:flex-start; }
+    .res-img { width:100%; max-height:55vh; object-fit:contain; background:var(--bg); flex-shrink:0; }
+    .res-card { width:100%; max-width:440px; padding:22px 20px 48px; display:flex; flex-direction:column; gap:16px; text-align:center; }
+    .res-title { font-size:19px; font-weight:900; color:var(--accent); line-height:1.45; }
+    .res-text  { font-size:14px; color:var(--dim); line-height:1.75; }
+    .ending-quote { background:var(--surface); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:16px 18px; font-size:15px; font-style:italic; line-height:1.8; color:var(--text); text-align:left; }
+    .clear-badge { display:inline-block; background:var(--accent); color:var(--bg); font-size:28px; font-weight:900; padding:10px 28px; border-radius:50px; }
 
-    /* feedback */
-    .fb {
-      padding: 12px 16px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 700;
-      text-align: center;
-      display: none;
-    }
-    .fb.err  { display:block; background:rgba(255,49,49,.12); border:1px solid rgba(255,49,49,.3); color:#ff8080; }
-    .fb.ok   { display:block; background:rgba(78,205,196,.12); border:1px solid rgba(78,205,196,.3); color:var(--accent); }
-
-    /* hint box */
-    .hint-box {
-      background: rgba(255,215,0,.07);
-      border: 1px solid rgba(255,215,0,.2);
-      border-radius: 10px;
-      padding: 14px 16px;
-      font-size: 13px;
-      line-height: 1.65;
-      color: var(--gold);
-      display: none;
-    }
-    .hint-box.open { display: block; }
-
-    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-       RESULT / CLEAR SCREENS
-    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-    .result { justify-content: flex-start; }
-    .res-img {
-      width: 100%;
-      max-height: 55vh;
-      object-fit: contain;
-      background: var(--bg);
-      flex-shrink: 0;
-    }
-    .res-card {
-      width: 100%;
-      max-width: 440px;
-      padding: 22px 20px 48px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      text-align: center;
-    }
-    .res-title { font-size: 19px; font-weight: 900; color: var(--accent); line-height: 1.45; }
-    .res-text  { font-size: 14px; color: var(--dim); line-height: 1.75; }
-
-    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-       ENDING
-    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-    .ending-quote {
-      background: var(--surface);
-      border-left: 3px solid var(--accent);
-      border-radius: 0 10px 10px 0;
-      padding: 16px 18px;
-      font-size: 15px;
-      font-style: italic;
-      line-height: 1.8;
-      color: var(--text);
-      text-align: left;
-    }
-    .clear-badge {
-      display: inline-block;
-      background: var(--accent);
-      color: var(--bg);
-      font-size: 28px;
-      font-weight: 900;
-      padding: 10px 28px;
-      border-radius: 50px;
-      letter-spacing: 2px;
-    }
-
-    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-       IMAGE MODAL (신문 / 이미지 확대)
-    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.93);
-      z-index: 999;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .modal.open { display: flex; }
-    .modal img {
-      width: 100%;
-      max-height: 80vh;
-      object-fit: contain;
-      border-radius: 6px;
-    }
-    .modal-close {
-      margin-top: 18px;
-      background: rgba(255,255,255,.1);
-      border: 1px solid rgba(255,255,255,.25);
-      color: white;
-      padding: 12px 36px;
-      border-radius: 10px;
-      font-size: 14px;
-      font-family: 'Noto Sans KR', sans-serif;
-      cursor: pointer;
-    }
+    /* MODAL */
+    .modal { position:fixed; inset:0; background:rgba(0,0,0,.93); z-index:999; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+    .modal.open { display:flex; }
+    .modal img { width:100%; max-height:80vh; object-fit:contain; border-radius:6px; }
+    .modal-close { margin-top:18px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.25); color:white; padding:12px 36px; border-radius:10px; font-size:14px; font-family:'Noto Sans KR',sans-serif; cursor:pointer; }
   </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════
-     INTRO STORY  1-1 → 1-2 → 1-3 → 1-4
-═══════════════════════════════════════════ -->
-
+<!-- STORY SLIDES -->
 <div class="screen story active" id="sc-1-1">
   <img src="images/1-1.png" alt="">
+  <div class="type-overlay"><div class="type-text"></div></div>
   <div class="tap-hint">화면을 탭하여 계속하기 ▶</div>
 </div>
 
 <div class="screen story" id="sc-1-2">
   <img src="images/1-2.png" alt="">
+  <div class="type-overlay"><div class="type-text"></div></div>
   <div class="tap-hint">화면을 탭하여 계속하기 ▶</div>
 </div>
 
 <div class="screen story" id="sc-1-3">
   <img src="images/1-3.png" alt="">
+  <div class="type-overlay"><div class="type-text"></div></div>
   <div class="tap-hint">화면을 탭하여 계속하기 ▶</div>
 </div>
 
 <div class="screen story" id="sc-1-4">
   <img src="images/1-4.png" alt="">
+  <div class="type-overlay"><div class="type-text"></div></div>
   <div class="tap-hint">화면을 탭하여 계속하기 ▶</div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     STAGE 1 PUZZLE  —  잠긴 문 (숫자 2자리)
-═══════════════════════════════════════════ -->
-
+<!-- STAGE 1 -->
 <div class="screen puzzle" id="pz-1">
-  <img class="pz-img" src="images/1-5.png" alt="잠긴 문">
+  <img class="pz-img" src="images/1-5.png" alt="">
   <div class="card">
     <div class="badge">🔐 1단계</div>
     <div class="card-title">문이 잠겨 있다…!<br>포니에 관련된 비밀번호일거야.</div>
@@ -370,35 +186,30 @@
   </div>
 </div>
 
-<!-- STAGE 1 CLEAR -->
 <div class="screen result" id="cl-1">
-  <img class="res-img" src="images/1clear.png" alt="문이 열렸다">
+  <img class="res-img" src="images/1clear.png" alt="">
   <div class="res-card">
     <div class="res-title">✅ Mr. Big 사무실 문이 열렸다!</div>
     <button class="btn btn-p" onclick="go('sc-2-1')">들어가기 →</button>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     STAGE 2 STORY  2-1 → 2-2
-═══════════════════════════════════════════ -->
-
+<!-- STORY SLIDES 2 -->
 <div class="screen story" id="sc-2-1">
   <img src="images/2-1.png" alt="">
+  <div class="type-overlay"><div class="type-text"></div></div>
   <div class="tap-hint">화면을 탭하여 계속하기 ▶</div>
 </div>
 
 <div class="screen story" id="sc-2-2">
   <img src="images/2-2.png" alt="">
+  <div class="type-overlay"><div class="type-text"></div></div>
   <div class="tap-hint">화면을 탭하여 계속하기 ▶</div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     STAGE 2 PUZZLE  —  컴퓨터 로그인
-═══════════════════════════════════════════ -->
-
+<!-- STAGE 2 -->
 <div class="screen puzzle" id="pz-2">
-  <img class="pz-img" src="images/2-3.png" alt="로그인">
+  <img class="pz-img" src="images/2-3.png" alt="">
   <div class="card">
     <div class="badge">💻 2단계</div>
     <div class="card-title">Mr. Big의 아이디랑 패스워드가 뭐지?</div>
@@ -415,41 +226,31 @@
     <div class="div"></div>
     <button class="btn btn-np" onclick="modal('images/2-4.png')">📰 책상의 신문 확인하기</button>
     <button class="btn btn-h" id="hbtn2" onclick="toggleHint('h2','hbtn2')">💡 힌트 보기</button>
-    <div class="hint-box" id="h2">
-      아이디 : 신문 첫 글자를 봐<br>
-      패스워드 : 광고 문구를 봐
-    </div>
+    <div class="hint-box" id="h2">아이디 : 신문 첫 글자를 봐<br>패스워드 : 광고 문구를 봐</div>
   </div>
 </div>
 
-<!-- STAGE 2 CLEAR -->
 <div class="screen result" id="cl-2">
-  <img class="res-img" src="images/2clear.png" alt="접속 성공">
+  <img class="res-img" src="images/2clear.png" alt="">
   <div class="res-card">
     <div class="res-title">✅ 뚫었다! 이제 코드 해제를 하면 된다!</div>
     <button class="btn btn-p" onclick="go('sc-3-1')">계속하기 →</button>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     STAGE 3 STORY  3-1
-═══════════════════════════════════════════ -->
-
+<!-- STORY SLIDE 3 -->
 <div class="screen story" id="sc-3-1">
   <img src="images/3-1.png" alt="">
+  <div class="type-overlay"><div class="type-text"></div></div>
   <div class="tap-hint">화면을 탭하여 계속하기 ▶</div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     STAGE 3 PUZZLE  —  아이콘 3개 비밀번호
-═══════════════════════════════════════════ -->
-
+<!-- STAGE 3 -->
 <div class="screen puzzle" id="pz-3">
-  <img class="pz-img" src="images/3-2.png" alt="최종 비밀번호">
+  <img class="pz-img" src="images/3-2.png" alt="">
   <div class="card">
     <div class="badge">🔑 3단계 — 최종</div>
     <div class="card-title">이거, 어디서 많이 보던 거다…<br>이 책에 단서가 있는 걸까?</div>
-    <!-- single input -->
     <div>
       <div class="lbl">비밀번호</div>
       <input class="gi" id="in3" type="text" maxlength="10" placeholder="?">
@@ -463,9 +264,8 @@
   </div>
 </div>
 
-<!-- STAGE 3 CLEAR -->
 <div class="screen result" id="cl-3">
-  <img class="res-img" src="images/3clear.png" alt="클리어">
+  <img class="res-img" src="images/3clear.png" alt="">
   <div class="res-card">
     <div class="res-title">✅ 코드 해제 완료!</div>
     <div class="res-text">거의 다 왔어. 이제 결말을 확인해!</div>
@@ -473,12 +273,9 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     ENDING
-═══════════════════════════════════════════ -->
-
+<!-- ENDING -->
 <div class="screen result" id="sc-end">
-  <img class="res-img" src="images/ending.png" alt="엔딩">
+  <img class="res-img" src="images/ending.png" alt="">
   <div class="res-card">
     <div class="clear-badge">🎉 CLEAR!</div>
     <div class="res-text">
@@ -495,125 +292,156 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     IMAGE MODAL
-═══════════════════════════════════════════ -->
+<!-- MODAL -->
 <div class="modal" id="img-modal">
   <img id="modal-img" src="" alt="">
   <button class="modal-close" onclick="closeModal()">✕ 닫기</button>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     JAVASCRIPT
-═══════════════════════════════════════════ -->
 <script>
-/* ╔══════════════════════════════════════════╗
-   ║  🔐 정답 설정 — 여기만 수정하면 됩니다  ║
-   ╚══════════════════════════════════════════╝ */
-const ANS = {
-  s1:   '62',      // 1단계: 숫자 2자리
-  s2id: '편향',    // 2단계 아이디
-  s2pw: '인공지능', // 2단계 패스워드
-  s3:   '503',     // 3단계 최종 비밀번호
-};
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ═══ 정답 ═══ */
+const ANS = { s1:'62', s2id:'편향', s2pw:'인공지능', s3:'503' };
 
-/* 화면 이동 */
+/* ═══ 슬라이드 텍스트  [[텍스트]] = 빨간 칩 ═══ */
+const TEXTS = {
+  'sc-1-1': "나는 전세계에서 가장 큰 AI회사, '포니'의 수석 개발자다.",
+  'sc-1-2': "오늘 밤 자정, 신규 AI모델 출시가 있다.\n\n자정이 가까워질 무렵, 야근을 하다가…\n큰 결함을 발견하고 말았다.",
+  'sc-1-3': "이 회사의 대표인 Mr. Big이 몰래 추가한 코드가 문제였다.\n\n'이게 뭐지…? 내가 모르는 사이에 넣은 건가?'",
+  'sc-1-4': "Mr. Big이 넣은 코드는 '[[칭찬 코드]]'다.\n인공지능이 칭찬하면 할수록\n사람들에게 포니에게 의존한다.\n\n이건 빼기로 했는데 왜 다시 넣어놓은 거지?\n아무래도 Mr. Big 의 방에 가봐야겠어!",
+  'sc-2-1': "Mr. Big이 언제 들어올지 모른다.\n최대한 빨리, 코드 해제를 할 수 있는 USB를 찾아야 해!",
+  'sc-2-2': "첫번째 서랍에서 '포니' 책과 USB를 발견했다.",
+  'sc-3-1': "거의 다 됐다. 출시까지 시간이 얼마 안 남았다.\n마지막 확인 비밀번호만 치면 되는데…",
+};
+
+const FLOW = {
+  'sc-1-1':'sc-1-2','sc-1-2':'sc-1-3','sc-1-3':'sc-1-4','sc-1-4':'pz-1',
+  'sc-2-1':'sc-2-2','sc-2-2':'pz-2',
+  'sc-3-1':'pz-3',
+};
+
+/* ═══ 화면 이동 ═══ */
 function go(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById(id);
-  if (el) { el.classList.add('active'); el.scrollTo(0, 0); }
+  if (!el) return;
+  el.classList.add('active');
+  el.scrollTo(0,0);
+  if (el.classList.contains('story')) startTyping(id);
 }
 
-/* 스토리 슬라이드 클릭 → 다음 화면 */
-const FLOW = {
-  'sc-1-1': 'sc-1-2',
-  'sc-1-2': 'sc-1-3',
-  'sc-1-3': 'sc-1-4',
-  'sc-1-4': 'pz-1',
-  'sc-2-1': 'sc-2-2',
-  'sc-2-2': 'pz-2',
-  'sc-3-1': 'pz-3',
-};
+/* 슬라이드 클릭 */
 document.querySelectorAll('.story').forEach(el => {
-  el.addEventListener('click', () => { if (FLOW[el.id]) go(FLOW[el.id]); });
+  el.addEventListener('click', () => {
+    if (el.dataset.typing === '1') { finishTyping(el.id); return; }
+    if (FLOW[el.id]) go(FLOW[el.id]);
+  });
 });
 
-/* 힌트 토글 */
-function toggleHint(boxId, btnEl) {
-  const box = document.getElementById(boxId);
-  const open = box.classList.toggle('open');
-  if (btnEl) document.getElementById(btnEl).textContent = open ? '💡 힌트 닫기' : '💡 힌트 보기';
+/* 첫 슬라이드 자동 시작 */
+startTyping('sc-1-1');
+
+/* ═══ 타이핑 엔진 ═══ */
+const timers = {};
+
+function parseSegments(raw) {
+  const segs = [];
+  const re = /\[\[([^\]]+)\]\]/g;
+  let last=0, m;
+  while ((m=re.exec(raw))!==null) {
+    if (m.index>last) segs.push({text:raw.slice(last,m.index),red:false});
+    segs.push({text:m[1],red:true});
+    last = re.lastIndex;
+  }
+  if (last<raw.length) segs.push({text:raw.slice(last),red:false});
+  const chars=[];
+  segs.forEach(s=>[...s.text].forEach(ch=>chars.push({ch,red:s.red})));
+  return chars;
 }
 
-/* 피드백 */
-function setFb(id, type, msg) {
+function startTyping(id) {
+  const raw = TEXTS[id];
+  if (!raw) return;
   const el = document.getElementById(id);
-  el.className = 'fb ' + type;
-  el.textContent = msg;
-}
+  if (!el) return;
+  const textEl = el.querySelector('.type-text');
+  const hint   = el.querySelector('.tap-hint');
+  textEl.innerHTML=''; hint.classList.remove('show');
+  el.dataset.typing='1';
 
-/* 흔들기 */
-function shake(id) {
-  const el = document.getElementById(id);
-  el.classList.remove('shake');
-  void el.offsetWidth;
-  el.classList.add('shake');
-  setTimeout(() => el.classList.remove('shake'), 450);
-}
+  const chars = parseSegments(raw);
+  let i=0, html='', inRed=false;
 
-/* 모달 */
-function modal(src) {
-  document.getElementById('modal-img').src = src;
-  document.getElementById('img-modal').classList.add('open');
-}
-function closeModal() {
-  document.getElementById('img-modal').classList.remove('open');
-}
-
-/* ━━━━ 정답 확인 ━━━━ */
-function check1() {
-  const v = document.getElementById('in1').value.trim();
-  if (v === ANS.s1) {
-    setFb('fb1', 'ok', '정답! 문이 열리고 있어...');
-    setTimeout(() => go('cl-1'), 700);
-  } else {
-    setFb('fb1', 'err', '조금 더 생각해 봐, 넌 수석 개발자야!');
-    shake('in1');
+  function tick() {
+    if (i>=chars.length) {
+      if (inRed) html+='</span>';
+      textEl.innerHTML=html;
+      el.dataset.typing='0';
+      hint.classList.add('show');
+      return;
+    }
+    const {ch,red}=chars[i];
+    if (red&&!inRed)  { html+='<span class="red-chip">'; inRed=true; }
+    if (!red&&inRed)  { html+='</span>'; inRed=false; }
+    html += ch==='\n' ? '<br>' : ch.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    textEl.innerHTML = html + '<span class="type-cursor"></span>';
+    i++;
+    const d = '.!?'.includes(ch)?130 : ch===','?70 : ch==='\n'?180 : 32;
+    timers[id]=setTimeout(tick,d);
   }
+  clearTimeout(timers[id]);
+  tick();
 }
 
-function check2() {
-  const id = document.getElementById('in2id').value.trim();
-  const pw = document.getElementById('in2pw').value.trim();
-  if (id === ANS.s2id && pw === ANS.s2pw) {
-    setFb('fb2', 'ok', '접속 성공!');
-    setTimeout(() => go('cl-2'), 700);
-  } else {
-    setFb('fb2', 'err', '조금 더 생각해 봐, 넌 수석 개발자야!');
-    shake('in2id'); shake('in2pw');
-  }
+function finishTyping(id) {
+  clearTimeout(timers[id]);
+  const raw=TEXTS[id]; if(!raw) return;
+  const el=document.getElementById(id); if(!el) return;
+  const textEl=el.querySelector('.type-text');
+  const hint=el.querySelector('.tap-hint');
+  let html=raw
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\n/g,'<br>')
+    .replace(/\[\[(.+?)\]\]/g,'<span class="red-chip">$1</span>');
+  textEl.innerHTML=html;
+  el.dataset.typing='0';
+  hint.classList.add('show');
 }
 
-function check3() {
-  const v = document.getElementById('in3').value.trim();
-  if (v === ANS.s3) {
-    setFb('fb3', 'ok', '코드 해제 성공!');
-    setTimeout(() => go('cl-3'), 700);
-  } else {
-    setFb('fb3', 'err', '조금 더 생각해 봐, 넌 수석 개발자야!');
-    shake('in3');
-  }
+/* ═══ UI 헬퍼 ═══ */
+function toggleHint(boxId,btnId) {
+  const b=document.getElementById(boxId);
+  const open=b.classList.toggle('open');
+  document.getElementById(btnId).textContent=open?'💡 힌트 닫기':'💡 힌트 보기';
 }
+function setFb(id,type,msg){const e=document.getElementById(id);e.className='fb '+type;e.textContent=msg;}
+function shake(id){const e=document.getElementById(id);e.classList.remove('shake');void e.offsetWidth;e.classList.add('shake');setTimeout(()=>e.classList.remove('shake'),450);}
+function modal(src){document.getElementById('modal-img').src=src;document.getElementById('img-modal').classList.add('open');}
+function closeModal(){document.getElementById('img-modal').classList.remove('open');}
 
-/* Enter 키 지원 */
-document.addEventListener('keydown', e => {
-  if (e.key !== 'Enter') return;
-  const a = document.querySelector('.screen.active');
-  if (!a) return;
-  if (a.id === 'pz-1') check1();
-  if (a.id === 'pz-2') check2();
-  if (a.id === 'pz-3') check3();
+/* ═══ 정답 확인 ═══ */
+function check1(){
+  const v=document.getElementById('in1').value.trim();
+  if(v===ANS.s1){setFb('fb1','ok','정답! 문이 열리고 있어...');setTimeout(()=>go('cl-1'),700);}
+  else{setFb('fb1','err','조금 더 생각해 봐, 넌 수석 개발자야!');shake('in1');}
+}
+function check2(){
+  const id=document.getElementById('in2id').value.trim();
+  const pw=document.getElementById('in2pw').value.trim();
+  if(id===ANS.s2id&&pw===ANS.s2pw){setFb('fb2','ok','접속 성공!');setTimeout(()=>go('cl-2'),700);}
+  else{setFb('fb2','err','조금 더 생각해 봐, 넌 수석 개발자야!');shake('in2id');shake('in2pw');}
+}
+function check3(){
+  const v=document.getElementById('in3').value.trim();
+  if(v===ANS.s3){setFb('fb3','ok','코드 해제 성공!');setTimeout(()=>go('cl-3'),700);}
+  else{setFb('fb3','err','조금 더 생각해 봐, 넌 수석 개발자야!');shake('in3');}
+}
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter') return;
+  const a=document.querySelector('.screen.active');
+  if(!a) return;
+  if(a.id==='pz-1') check1();
+  if(a.id==='pz-2') check2();
+  if(a.id==='pz-3') check3();
 });
 </script>
 </body>
